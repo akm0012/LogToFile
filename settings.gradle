@@ -1,2 +1,3 @@
+include ':LogToFile'
 include ':app'
 rootProject.name = "LogToFile"

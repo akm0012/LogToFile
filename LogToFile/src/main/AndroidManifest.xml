@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.andrewkingmarshall.logtofile">
+
+    <application>
+        <provider
+            android:name=".FileLoggerInitProvider"
+            android:authorities="com.andrewkingmarshall.logtofile.FileLoggerInitProvider" />
+    </application>
+</manifest>
