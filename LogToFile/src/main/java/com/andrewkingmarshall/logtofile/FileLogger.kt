@@ -43,7 +43,6 @@ object FileLogger {
             formatLog(logMessage)
     }
 
-//    @ObsoleteCoroutinesApi
     fun log(message: String, throwable: Throwable? = null) {
         scope.launch {
             logMessageActor.send(LogMessage(message, throwable))
