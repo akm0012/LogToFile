@@ -6,5 +6,15 @@
         <provider
             android:name=".FileLoggerInitProvider"
             android:authorities="com.andrewkingmarshall.logtofile.FileLoggerInitProvider" />
+
+        <provider
+            android:name=".LogFileProvider"
+            android:authorities="${applicationId}.com.andrewkingmarshall.logtofile.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths"/>
+        </provider>
     </application>
 </manifest>

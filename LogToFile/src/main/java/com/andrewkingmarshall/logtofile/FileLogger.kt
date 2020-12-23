@@ -2,6 +2,8 @@ package com.andrewkingmarshall.logtofile
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -149,6 +151,17 @@ object FileLogger {
     ): Boolean {
         val logFileDirectory = File(context.filesDir, directoryName)
         return logFileDirectory.deleteRecursively()
+    }
+
+    fun getUriForLogFile(
+        directoryName: String = this.directoryName,
+        fileName: String = getLogFileName()
+    ): Uri {
+
+        val logFileDirectory = File(context.filesDir, directoryName)
+        val logFile = File(logFileDirectory, fileName)
+
+        return FileProvider.getUriForFile(context, "TODO", logFile)
     }
 
     private fun formatLog(log: LogMessage): String {
