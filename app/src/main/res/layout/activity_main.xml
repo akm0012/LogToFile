@@ -34,4 +34,13 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/deleteLogButton" />
 
+    <Button
+        android:id="@+id/shareLogs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Share Logs"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/deleteDirectoryButton" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

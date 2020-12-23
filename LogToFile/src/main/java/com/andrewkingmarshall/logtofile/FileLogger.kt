@@ -2,6 +2,7 @@ package com.andrewkingmarshall.logtofile
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +30,7 @@ object FileLogger {
 
     private lateinit var context: Context
 
-    private var directoryName = "Logs"
+    private const val directoryName = "Logs"
 
     internal var logFileExtension = "txt"
         private set
@@ -75,17 +76,6 @@ object FileLogger {
     }
 
     /**
-     * Set's the parent directory name where the Logs will be saved.
-     *
-     * This directory will live in your apps file directory.
-     *
-     * @param directoryName The name of the folder where the logs will live.
-     */
-    fun setFileLocation(directoryName: String) {
-        this.directoryName = directoryName
-    }
-
-    /**
      * Sets the extension of the log file. By default, ".txt." is used. All log files will be
      * nothing more than text files, but you can use a custom extension so users won't be able to
      * open it as easily.
@@ -125,12 +115,10 @@ object FileLogger {
      * If the directory or fileName are not included, it will use the default or last set file
      * directory / name.
      *
-     * @param directoryName The directory where the log is located.
      * @param fileName The name of the log file.
      * @return Flag indicating if anything was deleted.
      */
     fun deleteLogFile(
-        directoryName: String = this.directoryName,
         fileName: String = getLogFileName()
     ): Boolean {
         val logFileDirectory = File(context.filesDir, directoryName)
@@ -139,29 +127,67 @@ object FileLogger {
     }
 
     /**
-     * Deletes all the files in a directory.
+     * Deletes all the logs.
      *
-     * If the directory is not included, it will use the default or last set file directory.
-     *
-     * @param directoryName The directory name.
      * @return Flag indicating if anything was deleted.
      */
-    fun deleteAllLogsInDirectory(
-        directoryName: String = this.directoryName,
-    ): Boolean {
+    fun deleteAllLogs(): Boolean {
         val logFileDirectory = File(context.filesDir, directoryName)
         return logFileDirectory.deleteRecursively()
     }
 
+    /**
+     * Gets the Uri for the log file.
+     *
+     * By default it will get the currently set log file.
+     *
+     * @param fileName The log file name.
+     * @return The Uri of the log file.
+     */
     fun getUriForLogFile(
-        directoryName: String = this.directoryName,
         fileName: String = getLogFileName()
     ): Uri {
 
         val logFileDirectory = File(context.filesDir, directoryName)
         val logFile = File(logFileDirectory, fileName)
 
-        return FileProvider.getUriForFile(context, "TODO", logFile)
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.com.andrewkingmarshall.logtofile.fileprovider",
+            logFile
+        )
+    }
+
+    /**
+     * Gets an Intent to send the Logs.
+     *
+     * @param message An optional message.
+     * @param subject an optional subject.
+     * @return The Intent to send the logs.
+     */
+    fun getIntentToSendLogs(message: String? = null, subject: String? = null): Intent {
+
+        val uri = getUriForLogFile()
+
+        return Intent(Intent.ACTION_SEND).apply {
+
+            if (!message.isNullOrEmpty()) {
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    message
+                )
+            }
+
+            if (!subject.isNullOrEmpty()) {
+                putExtra(
+                    Intent.EXTRA_SUBJECT,
+                    subject
+                )
+            }
+
+            type = "text/html"
+            putExtra(Intent.EXTRA_STREAM, uri)
+        }
     }
 
     private fun formatLog(log: LogMessage): String {
