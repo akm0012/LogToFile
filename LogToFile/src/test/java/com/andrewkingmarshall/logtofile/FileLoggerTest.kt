@@ -5,6 +5,8 @@ import org.junit.Assert
 
 class FileLoggerTest : TestCase() {
 
+    // region setFileExtension() tests
+
     fun `testSetFileExtension happy path`() {
 
         val expectedFileExtension = "akm"
@@ -27,13 +29,29 @@ class FileLoggerTest : TestCase() {
         Assert.assertEquals(expectedFileExtension, actualFileExtension)
     }
 
+    fun `testSetFileExtension with small name and dot`() {
+
+        val expectedFileExtension = "a"
+
+        FileLogger.setFileExtension(".a")
+
+        val actualFileExtension = FileLogger.logFileExtension
+
+        Assert.assertEquals(expectedFileExtension, actualFileExtension)
+    }
+
+    fun `testSetFileExtension with small name`() {
+
+        val expectedFileExtension = "a"
+
+        FileLogger.setFileExtension("a")
+
+        val actualFileExtension = FileLogger.logFileExtension
+
+        Assert.assertEquals(expectedFileExtension, actualFileExtension)
+    }
+
     fun `testSetFileExtension with empty input`() {
-
-//        val exception = assertThrows(IllegalArgumentException::class.java) {
-//            val blackHole = 1 / 0
-//        }
-//        assertEquals("/ by zero", exception.message)
-
 
         var wasThrowableThrown = false
 
@@ -45,4 +63,6 @@ class FileLoggerTest : TestCase() {
 
         Assert.assertTrue(wasThrowableThrown)
     }
+
+    //endregion
 }

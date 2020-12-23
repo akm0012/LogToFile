@@ -2,7 +2,6 @@ package com.andrewkingmarshall.logtofile
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Environment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -10,13 +9,13 @@ import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
-import java.lang.StringBuilder
-import java.text.DateFormat.*
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
  * Writes log messages to a File.
+ *
+ * Default timeStampFormat is "yyyy-MM-dd HH:mm:ss.SSS"
  *
  * The Coroutine logic should make this act like a FIFO queue the runs on a background IO Thread.
  *
@@ -24,28 +23,48 @@ import java.util.*
  */
 object FileLogger {
 
+    var timeStampFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+
     private lateinit var context: Context
 
-    internal var directoryName = "Logs"
+    private var directoryName = "Logs"
 
     internal var logFileExtension = "txt"
         private set
 
-    internal var logFileName = "Log"
+    private var logFileName = "Log"
 
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    data class LogMessage(val message: String, val throwable: Throwable?)
+    data class LogMessage(val message: String?, val throwable: Throwable?)
 
     @ObsoleteCoroutinesApi
     private val logMessageActor = scope.actor<LogMessage> {
         for (logMessage in channel)
-            formatLog(logMessage)
+
+            appendToEndOfFile(formatLog(logMessage))
     }
 
-    fun log(message: String, throwable: Throwable? = null) {
+    /**
+     * Writes a log to a file. Include a throwable to view the stack trace as well.
+     *
+     * If both log and throwable are null or empty, "[empty message]" will be logged.
+     *
+     * @param message A message to log.
+     * @param throwable A throwable to log.
+     */
+    fun log(message: String? = null, throwable: Throwable? = null) {
+
+        // Make sure there is something to log...
+        var messageToLog = message
+
+        if (messageToLog.isNullOrEmpty() && throwable == null) {
+            // There is nothing to log.
+            messageToLog = "[empty message]"
+        }
+
         scope.launch {
-            logMessageActor.send(LogMessage(message, throwable))
+            logMessageActor.send(LogMessage(messageToLog, throwable))
         }
     }
 
@@ -84,16 +103,63 @@ object FileLogger {
         }
     }
 
+    /**
+     * Sets the name of the file where all the logs will be saved. Do not include the extension
+     * here.
+     *
+     * @param fileName The name of the log file without it's extension. Ex: "MyLogs"
+     */
     fun setLogFileName(fileName: String) {
+        if (fileName.isEmpty()) {
+            throw IllegalArgumentException("You can not use an empty String.")
+        }
+
         this.logFileName = fileName
     }
 
-    private fun formatLog(log: LogMessage) {
+    /**
+     * Deletes a log file.
+     *
+     * If the directory or fileName are not included, it will use the default or last set file
+     * directory / name.
+     *
+     * @param directoryName The directory where the log is located.
+     * @param fileName The name of the log file.
+     * @return Flag indicating if anything was deleted.
+     */
+    fun deleteLogFile(
+        directoryName: String = this.directoryName,
+        fileName: String = getLogFileName()
+    ): Boolean {
+        val logFileDirectory = File(context.filesDir, directoryName)
+        val fileToDelete = File(logFileDirectory, fileName)
+        return fileToDelete.delete()
+    }
+
+    /**
+     * Deletes all the files in a directory.
+     *
+     * If the directory is not included, it will use the default or last set file directory.
+     *
+     * @param directoryName The directory name.
+     * @return Flag indicating if anything was deleted.
+     */
+    fun deleteAllLogsInDirectory(
+        directoryName: String = this.directoryName,
+    ): Boolean {
+        val logFileDirectory = File(context.filesDir, directoryName)
+        return logFileDirectory.deleteRecursively()
+    }
+
+    private fun formatLog(log: LogMessage): String {
 
         val timeStamp = getCurrentTimeStamp()
 
         // Add the Log Message
-        val logMessageStringBuilder = StringBuilder("$timeStamp: ${log.message}\n")
+        val logMessageStringBuilder = StringBuilder()
+
+        // Add the log if it's there
+        log.message?.let { logMessageStringBuilder.append("$timeStamp: ${it}\n") }
 
         // Add the exception if it's there
         log.throwable?.let {
@@ -105,28 +171,12 @@ object FileLogger {
             }
         }
 
-        appendToEndOfFile(logMessageStringBuilder.toString())
-    }
-
-    fun deleteLogFile(
-        directoryName: String = this.directoryName,
-        fileName: String = "$logFileName.$logFileExtension"
-    ): Boolean {
-        val logFileDirectory = File(context.filesDir, directoryName)
-        val fileToDelete = File(logFileDirectory, fileName)
-        return fileToDelete.delete()
-    }
-
-    fun deleteAllLogsInDirectory(
-        directoryName: String = this.directoryName,
-    ): Boolean {
-        val logFileDirectory = File(context.filesDir, directoryName)
-        return logFileDirectory.deleteRecursively()
+        return logMessageStringBuilder.toString()
     }
 
     @SuppressLint("SimpleDateFormat")
     private fun getCurrentTimeStamp(): String {
-        return SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(Date())
+        return SimpleDateFormat(timeStampFormat).format(Date())
     }
 
     private fun appendToEndOfFile(text: String) {
@@ -134,12 +184,15 @@ object FileLogger {
         val logFileDirectory = File(context.filesDir, directoryName)
         logFileDirectory.mkdir()
 
-        val logFile = File(logFileDirectory, "$logFileName$logFileExtension")
+        val logFile = File(logFileDirectory, getLogFileName())
 
         val outputStream = FileOutputStream(logFile, true)
         outputStream.write(text.encodeToByteArray())
         outputStream.close()
     }
 
+    private fun getLogFileName(): String {
+        return "$logFileName.$logFileExtension"
+    }
 
 }
