@@ -5,7 +5,9 @@
     <application>
         <provider
             android:name=".FileLoggerInitProvider"
-            android:authorities="com.andrewkingmarshall.logtofile.FileLoggerInitProvider" />
+            android:authorities="${applicationId}.com.andrewkingmarshall.logtofile.FileLoggerInitProvider"
+            android:exported="false"
+            />
 
         <provider
             android:name=".LogFileProvider"
